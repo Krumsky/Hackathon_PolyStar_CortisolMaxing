@@ -1,7 +1,8 @@
-#include <Arduino.h>
+b #include<Arduino.h>
+#include <Stepper.h>
 
-// put function declarations here:
-int myFunction(int, int);
+    // put function declarations here:
+    int myFunction(int, int);
 
 void setup() {
   // put your setup code here, to run once:
@@ -17,6 +18,4 @@ void loop() {
 }
 
 // put function definitions here:
-int myFunction(int x, int y) {
-  return x + y;
-}
+int myFunction(int x, int y) { return x + y; }

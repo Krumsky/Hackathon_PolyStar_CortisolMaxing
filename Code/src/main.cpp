@@ -109,6 +109,11 @@ void updateMotionSensor() {
 }
 
 void setup() {
+  // put your setup code here, to run once:
+  pinMode(MOTION_SENSOR_PIN, INPUT);
+  // attachInterrupt(digitalPinToInterrupt(MOTION_SENSOR_PIN), ISR1, RISING);
+  stepControlInit(myStepper1, REVOLUTIONS_PER_MINUTE);
+  stepControlInit(myStepper2, STEERING_SPEED);
   Serial.begin(115200);
 
   control.begin();

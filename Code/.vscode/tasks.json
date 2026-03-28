@@ -1,0 +1,40 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "type": "PlatformIO",
+      "task": "Build (uno)",
+      "problemMatcher": [
+        "$platformio"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "label": "PlatformIO: Build (uno)"
+    },
+    {
+      "type": "PlatformIO",
+      "task": "Upload (uno)",
+      "problemMatcher": [
+        "$platformio"
+      ],
+      "label": "PlatformIO: Upload (uno)"
+    },
+    {
+      "type": "PlatformIO",
+      "task": "Monitor",
+      "problemMatcher": [],
+      "label": "PlatformIO: Monitor"
+    },
+    {
+      "label": "PlatformIO: Upload and Monitor (uno)",
+      "dependsOn": [
+        "PlatformIO: Upload (uno)",
+        "PlatformIO: Monitor"
+      ],
+      "dependsOrder": "sequence",
+      "problemMatcher": []
+    }
+  ]
+}

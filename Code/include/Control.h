@@ -11,7 +11,7 @@ enum RobotCommand {
 };
 
 struct ControlConfig {
-  ControlConfig(long stopDistanceCm = 15, long turnDistanceCm = 25)
+  ControlConfig(long stopDistanceCm = 10, long turnDistanceCm = 15)
       : stopDistanceCm(stopDistanceCm), turnDistanceCm(turnDistanceCm) {}
 
   long stopDistanceCm;

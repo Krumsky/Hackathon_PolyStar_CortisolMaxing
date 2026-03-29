@@ -5,14 +5,17 @@ constexpr int STEPS_PER_REVOLUTION = 2048;
 constexpr long STEERING_SPEED_RPM = 10;
 constexpr long DRIVE_SPEED_RPM = 12;
 
-constexpr long STEERING_TURN_STEPS = 128;
-constexpr long DRIVE_FORWARD_STEPS = -500;
-constexpr long DRIVE_REVERSE_STEPS = 500;
+constexpr long STEERING_TURN_STEPS = 150;
+constexpr long STEERING_CENTER = 115;
+constexpr long DRIVE_FORWARD_STEPS = -750;
+constexpr long DRIVE_REVERSE_STEPS = 750;
 
 constexpr unsigned long CONTROL_PERIOD_MS = 250;
 constexpr unsigned long FACE_PERIOD_MS = 1500;
 constexpr unsigned long FAN_ON_DURATION_MS = 10000;
 constexpr unsigned long REACTION_FACE_HOLD_MS = 3000;
+constexpr unsigned long MOTION_SETTLE_MS = 400;
+constexpr unsigned long MOTION_SCAN_WINDOW_MS = 1000;
 
 constexpr float TEMPERATURE_VERY_COLD_C = 15.0f;
 constexpr float TEMPERATURE_AMBIENT_MIN_C = 20.0f;

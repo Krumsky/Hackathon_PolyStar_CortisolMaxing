@@ -41,6 +41,7 @@ class FaceMatrixController {
 
  private:
   void drawBitmap(const byte bitmap[8]);
+  void rotateRight90(const byte source[8], byte target[8]) const;
 
   FaceMatrixConfig config_;
   LedControl matrix_;

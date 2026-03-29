@@ -89,13 +89,12 @@ void BuzzerController::playTune(BuzzerTune tune) {
 
 void BuzzerController::update() {
   if (!isPlaying_) {
-    return;
+    return; // not currently playing a tune
   }
 
   const unsigned long now = millis();
-  if (now - noteStartMs_ <
-      (unsigned long)(currentDurationsMs_[currentNoteIndex_] + kNoteGapMs)) {
-    return;
+  if (now - noteStartMs_ < (unsigned long)(currentDurationsMs_[currentNoteIndex_] + kNoteGapMs)) {
+    return; // current note is still playing
   }
 
   currentNoteIndex_++;

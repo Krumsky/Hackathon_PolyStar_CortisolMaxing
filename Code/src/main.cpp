@@ -41,6 +41,7 @@ const FaceEmotion idleFaceSequence[] = {
 void updateClimateSensor();
 void updateFan();
 void serviceBackgroundTasks();
+void waitWithBackgroundTasks(unsigned long durationMs);
 
 void configureMotor(Stepper& motor, long speedRpm) {
   motor.setSpeed(speedRpm);
@@ -56,6 +57,14 @@ void moveMotorSteps(Stepper& motor, long stepCount) {
 
   for (long stepIndex = 0; stepIndex < totalSteps; ++stepIndex) {
     motor.step(direction);
+    serviceBackgroundTasks();
+  }
+}
+
+void waitWithBackgroundTasks(unsigned long durationMs) {
+  const unsigned long startMs = millis();
+
+  while (millis() - startMs < durationMs) {
     serviceBackgroundTasks();
   }
 }
@@ -104,31 +113,31 @@ void startFanCycle() {
   fanIsOn = true;
   fanStopAtMs = millis() + FAN_ON_DURATION_MS;
 
-  Serial.println("Fan       | ON for 10 s");
+  Serial.println("    Fan       | ON for 10 s");
 }
 
 void updateFan() {
   if (!fanIsOn) {
-    return;
+    return; // fan is currently off, nothing to do
   }
 
   if (millis() < fanStopAtMs) {
-    return;
+    return; // fan is still within on duration, keep it on
   }
 
-  digitalWrite(FAN_PIN, LOW);
+  digitalWrite(FAN_PIN, LOW); // turn off the fan
   fanIsOn = false;
-  Serial.println("Fan       | OFF");
+  Serial.println("  Fan       | OFF");
 }
 
 void updateClimateSensor() {
   if (!climateSensor.measure(&currentTemperatureC, &currentHumidity)) {
-    return;
+    return; // failed to read from sensor, keep previous values and don't update face reaction
   }
 
   hasClimateReading = true;
 
-  Serial.print("Climate   | temperature: ");
+  Serial.print("    Climate   | temperature: ");
   Serial.print(currentTemperatureC, 2);
   Serial.print(" C | humidity: ");
   Serial.print(currentHumidity, 2);
@@ -146,18 +155,17 @@ void updateIdleFaceAnimation() {
   static int faceIndex = 0;
 
   if (millis() < reactionFaceHoldUntilMs) {
-    return;
+    return; // currently showing reaction face, don't update idle animation
   }
 
   const unsigned long now = millis();
   if (now - lastFaceUpdateMs < FACE_PERIOD_MS) {
-    return;
+    return; // not time to update face yet
   }
 
   lastFaceUpdateMs = now;
 
-  faceIndex = (faceIndex + 1) %
-              (sizeof(idleFaceSequence) / sizeof(idleFaceSequence[0]));
+  faceIndex = (faceIndex + 1) % (sizeof(idleFaceSequence) / sizeof(idleFaceSequence[0]));
   faceMatrixController.showEmotion(idleFaceSequence[faceIndex]);
 
   Serial.print("Face      | idle ");
@@ -167,7 +175,7 @@ void updateIdleFaceAnimation() {
 void reactToMotion() {
   FaceEmotion reactionFace = FACE_NEUTRAL;
 
-  if (!hasClimateReading) {
+  if (!hasClimateReading) { // No Climat Reading since startup, default to neutral face and unhappy tune
     Serial.println("Reaction  | no climate reading yet, neutral face");
     setReactionFace(reactionFace);
     buzzer.playTune(BUZZER_TUNE_UNHAPPY);
@@ -177,7 +185,7 @@ void reactToMotion() {
   reactionFace = chooseFaceForTemperature(currentTemperatureC);
   setReactionFace(reactionFace);
 
-  Serial.print("Reaction  | face: ");
+  Serial.print("  Reaction  | face: ");
   Serial.print(faceName(reactionFace));
   Serial.print(" | temperature: ");
   Serial.print(currentTemperatureC, 2);
@@ -195,49 +203,65 @@ void reactToMotion() {
 }
 
 void checkMotionAfterMove() {
-  const bool motionDetected = digitalRead(MOTION_SENSOR_PIN) == HIGH;
+  bool motionDetected = false;
+  const unsigned long scanStartMs = millis();
 
-  Serial.print("Motion    | ");
-  if (!motionDetected) {
-    Serial.println("NONE");
-    return;
+  Serial.println("  Motion    | stop and scan");
+  waitWithBackgroundTasks(MOTION_SETTLE_MS);
+
+  while (millis() - scanStartMs < MOTION_SETTLE_MS + MOTION_SCAN_WINDOW_MS) {
+    serviceBackgroundTasks(); 
+
+    if (digitalRead(MOTION_SENSOR_PIN) == HIGH) {
+      motionDetected = true;
+      break;
+    }
   }
 
+  Serial.print("  Motion    | ");
+  if (!motionDetected ) {
+      Serial.println("NONE");
+      return;
+    }
+  
+  
   Serial.println("DETECTED");
-  reactToMotion();
+    reactToMotion();
+  
+  
 }
 
 void executeRobotCommand(RobotCommand command) {
   switch (command) {
     case COMMAND_FORWARD:
-      Serial.println("Drive     | forward step");
+      Serial.println("    Drive     | forward step");
       moveMotorSteps(driveMotor, DRIVE_FORWARD_STEPS);
       break;
 
     case COMMAND_TURN_LEFT:
-      Serial.println("Steering  | left");
+      Serial.println("    Steering  | left");
       moveMotorSteps(steeringMotor, -STEERING_TURN_STEPS);
-      Serial.println("Drive     | forward step");
+      Serial.println("    Drive     | forward step");
       moveMotorSteps(driveMotor, DRIVE_FORWARD_STEPS);
-      Serial.println("Steering  | center");
-      moveMotorSteps(steeringMotor, STEERING_TURN_STEPS);
+      Serial.println("    Steering  | center");
+      moveMotorSteps(steeringMotor, STEERING_CENTER);
       break;
 
     case COMMAND_TURN_RIGHT:
-      Serial.println("Steering  | right");
+      Serial.println("    Steering  | right");
       moveMotorSteps(steeringMotor, STEERING_TURN_STEPS);
-      Serial.println("Drive     | forward step");
+      Serial.println("    Drive     | forward step");
       moveMotorSteps(driveMotor, DRIVE_FORWARD_STEPS);
-      Serial.println("Steering  | center");
-      moveMotorSteps(steeringMotor, -STEERING_TURN_STEPS);
+      Serial.println("    Steering  | center");
+      moveMotorSteps(steeringMotor, -STEERING_CENTER);
       break;
 
     case COMMAND_STOP:
-      Serial.println("Drive     | stop");
+      Serial.println("    Drive     | stop");
       break;
 
     case COMMAND_REVERSE:
-      Serial.println("Drive     | reverse step");
+      Serial.println("    Drive     | reverse step");
       moveMotorSteps(driveMotor, DRIVE_REVERSE_STEPS);
       break;
   }
@@ -246,9 +270,10 @@ void executeRobotCommand(RobotCommand command) {
 void updateRobotControlLoop() {
   static unsigned long lastControlUpdateMs = 0;
 
+
   const unsigned long now = millis();
   if (now - lastControlUpdateMs < CONTROL_PERIOD_MS) {
-    return;
+    return; // not time to update control loop yet
   }
 
   lastControlUpdateMs = now;
@@ -260,6 +285,12 @@ void updateRobotControlLoop() {
   executeRobotCommand(control.lastCommand());
   checkMotionAfterMove();
   Serial.println();
+}
+void calibrateStepper(Stepper& motor) {
+  Serial.println("    Steering  | right");
+  moveMotorSteps(steeringMotor, STEERING_TURN_STEPS);
+  Serial.println("    Steering  | center");
+  moveMotorSteps(steeringMotor, -STEERING_CENTER);
 }
 
 void setup() {
@@ -279,6 +310,8 @@ void setup() {
 
   configureMotor(steeringMotor, STEERING_SPEED_RPM);
   configureMotor(driveMotor, DRIVE_SPEED_RPM);
+
+  calibrateStepper(steeringMotor);
 
   Serial.println("Modules ready");
   Serial.print("Face pins  | data: ");
@@ -318,6 +351,9 @@ void setup() {
   Serial.print(", ");
   Serial.println(STEPPER2_IN4);
   Serial.println();
+
+  // Test fan
+  startFanCycle();
 }
 
 void loop() {

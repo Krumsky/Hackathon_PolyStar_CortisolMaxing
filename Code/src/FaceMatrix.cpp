@@ -1,58 +1,58 @@
 #include "FaceMatrix.h"
 
 const byte kHappyFace[8] = {
-    B00111100,
+    B00000000,
+    B00000000,
+    B00000000,
+    B00000000,
+    B00000000,
     B01000010,
-    B10100101,
-    B10000001,
-    B10100101,
-    B10011001,
-    B01000010,
-    B00111100,
+    B00100100,
+    B00011000,
 };
 
 const byte kNeutralFace[8] = {
-    B00111100,
-    B01000010,
-    B10100101,
-    B10000001,
-    B10000001,
-    B10111101,
-    B01000010,
-    B00111100,
+    B00000000,
+    B00000000,
+    B00000000,
+    B00000000,
+    B00000000,
+    B00000000,
+    B01111110,
+    B00000000,
 };
 
 const byte kSadFace[8] = {
-    B00111100,
+    B00000000,
+    B00000000,
+    B00000000,
+    B00000000,
+    B00000000,
+    B00011000,
+    B00100100,
     B01000010,
-    B10100101,
-    B10000001,
-    B10011001,
-    B10100101,
-    B01000010,
-    B00111100,
 };
 
 const byte kSurprisedFace[8] = {
-    B00111100,
-    B01000010,
-    B10100101,
-    B10000001,
-    B10011001,
-    B10011001,
-    B01000010,
-    B00111100,
+    B00000000,
+    B00000000,
+    B00000000,
+    B00000000,
+    B00011000,
+    B00100100,
+    B00100100,
+    B00011000,
 };
 
 const byte kBlinkFace[8] = {
+    B00000000,
+    B00000000,
+    B00000000,
+    B00000000,
+    B00000000,
+    B00000000,
     B00111100,
-    B01000010,
-    B10000001,
-    B10111101,
-    B10000001,
-    B10011001,
-    B01000010,
-    B00111100,
+    B00000000,
 };
 
 FaceMatrixController::FaceMatrixController(const FaceMatrixConfig& config)
@@ -102,7 +102,25 @@ FaceEmotion FaceMatrixController::currentEmotion() const {
 }
 
 void FaceMatrixController::drawBitmap(const byte bitmap[8]) {
+  byte rotatedBitmap[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+
+  rotateRight90(bitmap, rotatedBitmap);
+
   for (uint8_t row = 0; row < 8; ++row) {
-    matrix_.setRow(config_.deviceIndex, row, bitmap[row]);
+    matrix_.setRow(config_.deviceIndex, row, rotatedBitmap[row]);
+  }
+}
+
+void FaceMatrixController::rotateRight90(const byte source[8],
+                                         byte target[8]) const {
+  for (uint8_t row = 0; row < 8; ++row) {
+    for (uint8_t col = 0; col < 8; ++col) {
+      const bool pixelOn = (source[row] & (B10000000 >> col)) != 0;
+      if (!pixelOn) {
+        continue;
+      }
+
+      target[col] |= (B10000000 >> (7 - row));
+    }
   }
 }
